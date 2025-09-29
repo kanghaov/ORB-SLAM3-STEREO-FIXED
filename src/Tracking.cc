@@ -2344,10 +2344,21 @@ void Tracking::StereoInitialization()
                 return;
             }
 
-            if (!mFastInit && (mCurrentFrame.mpImuPreintegratedFrame->avgA-mLastFrame.mpImuPreintegratedFrame->avgA).norm()<0.5)
+            const Eigen::Vector3f accDiff = mCurrentFrame.mpImuPreintegratedFrame->avgA -
+                                            mLastFrame.mpImuPreintegratedFrame->avgA;
+            const float kAccInitThresh = 0.05f; // original 0.5f
+            const float accDiffNorm = accDiff.norm();
+            if (!mFastInit && accDiffNorm < kAccInitThresh)
             {
-                cout << "not enough acceleration" << endl;
-                return;
+                if (mState == NO_IMAGES_YET || mState == NOT_INITIALIZED)
+                {
+                    // allow visual initialization to proceed; IMU can be fused later
+                }
+                else
+                {
+                    cout << "not enough acceleration (" << accDiffNorm << ")" << endl;
+                    return;
+                }
             }
 
             if(mpImuPreintegratedFromLastKF)
